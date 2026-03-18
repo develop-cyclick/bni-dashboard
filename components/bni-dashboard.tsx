@@ -36,9 +36,9 @@ export default function BNIDashboard(){
     load();
   },[]);
 
-  const allPeriods=["ทั้งหมด",...periods];
   const[view,setView]=useState("121");
-  const[period,setPeriod]=useState("ทั้งหมด");
+  const[fromPeriod,setFromPeriod]=useState("");
+  const[toPeriod,setToPeriod]=useState("");
   const[sel,setSel]=useState<{f:string;t:string;v:number}|null>(null);
   const[hover,setHover]=useState<string|null>(null);
   const vc=VIEWS.find(v=>v.key===view)!;
@@ -46,9 +46,11 @@ export default function BNIDashboard(){
 
   const fd=useMemo(()=>{
     let d=rawData;
-    if(period!=="ทั้งหมด")d=d.filter(r=>r.r===period);
+    const fi=fromPeriod?periods.indexOf(fromPeriod):0;
+    const ti=toPeriod?periods.indexOf(toPeriod):periods.length-1;
+    if(fromPeriod||toPeriod)d=d.filter(r=>{const i=periods.indexOf(r.r);return i>=fi&&i<=ti;});
     return d.filter(r=>r.s===vc.slip);
-  },[view,period]);
+  },[view,fromPeriod,toPeriod,rawData,periods,vc]);
 
   const members=useMemo(():string[]=>{
     const s=new Set<string>();
@@ -173,13 +175,25 @@ export default function BNIDashboard(){
             </button>
           ))}
         </div>
-        <div style={{display:"flex",gap:3,marginLeft:"auto"}}>
-          {allPeriods.map(p=>(
-            <button key={p} onClick={()=>{setPeriod(p);setSel(null);}}
-              style={{padding:"4px 10px",borderRadius:6,border:period===p?"1.5px solid #6366f1":"1px solid #e2e8f0",background:period===p?"#eef2ff":"#fff",color:period===p?"#4338ca":"#94a3b8",cursor:"pointer",fontSize:11,fontWeight:500,fontFamily:"inherit"}}>
-              {p}
+        <div style={{display:"flex",gap:6,alignItems:"center",marginLeft:"auto"}}>
+          <span style={{fontSize:11,color:"#94a3b8",fontWeight:500}}>ช่วง</span>
+          <select value={fromPeriod} onChange={e=>{setFromPeriod(e.target.value);setSel(null);}}
+            style={{padding:"4px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",color:"#334155",cursor:"pointer",fontSize:11,fontFamily:"inherit",outline:"none"}}>
+            <option value="">เริ่มต้น</option>
+            {periods.map(p=><option key={p} value={p}>{p}</option>)}
+          </select>
+          <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
+          <select value={toPeriod} onChange={e=>{setToPeriod(e.target.value);setSel(null);}}
+            style={{padding:"4px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",color:"#334155",cursor:"pointer",fontSize:11,fontFamily:"inherit",outline:"none"}}>
+            <option value="">สิ้นสุด</option>
+            {periods.map(p=><option key={p} value={p}>{p}</option>)}
+          </select>
+          {(fromPeriod||toPeriod)&&(
+            <button onClick={()=>{setFromPeriod("");setToPeriod("");setSel(null);}}
+              style={{padding:"4px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",color:"#94a3b8",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>
+              ✕
             </button>
-          ))}
+          )}
         </div>
       </div>
 

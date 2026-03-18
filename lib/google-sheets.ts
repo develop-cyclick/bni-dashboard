@@ -13,6 +13,8 @@
  * ระบบจะพยายาม parse วันที่จากชื่อไฟล์ หรือใช้ modified date แทน
  */
 
+import * as XLSX from "xlsx";
+
 export interface SlipRecord {
   /** Report period label e.g. "11 ก.พ. 2569" */
   r: string;
@@ -33,9 +35,6 @@ interface DriveFile {
   modifiedTime: string;
 }
 
-interface SheetResponse {
-  values?: string[][];
-}
 
 const THAI_MONTHS: Record<string, string> = {
   "01": "ม.ค.",
@@ -142,25 +141,37 @@ async function listFilesInFolder(
 }
 
 /**
- * Fetch data from a single Google Sheet (by file ID)
- * Works with both native Google Sheets and uploaded Excel files
+ * Fetch data from a single file (by file ID and MIME type)
+ * - Native Google Sheets: export as xlsx via Drive export API
+ * - Excel (.xls/.xlsx): download binary via Drive API
+ * Both parsed with the xlsx library (no Sheets API required)
  */
 async function fetchSheetData(
   fileId: string,
+  mimeType: string,
   apiKey: string
 ): Promise<string[][]> {
-  // For Google Sheets, read via Sheets API
-  // The first sheet (tab) is used — range "A1:K" covers all columns
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${fileId}/values/A1:K?key=${apiKey}`;
-  const res = await fetch(url, { cache: "no-store" });
+  let url: string;
+  if (mimeType === "application/vnd.google-apps.spreadsheet") {
+    // Export native Google Sheet as xlsx — does not require Sheets API
+    const exportMime = encodeURIComponent("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=${exportMime}&key=${apiKey}`;
+  } else {
+    // Direct download URL — works for publicly shared .xls/.xlsx files
+    url = `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
+  }
 
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
-    console.error(`Failed to read sheet ${fileId}: ${res.status}`);
+    console.error(`Failed to fetch file ${fileId}: ${res.status}`);
     return [];
   }
 
-  const data: SheetResponse = await res.json();
-  return data.values || [];
+  const buffer = await res.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows: string[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  return rows;
 }
 
 /**
@@ -179,7 +190,7 @@ function parseSlipRows(rows: string[][], periodLabel: string): SlipRecord[] {
   // Find header row (the one starting with "From")
   let dataStart = 4; // default
   for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    if (rows[i]?.[0]?.trim() === "From") {
+    if (String(rows[i]?.[0] ?? "").trim() === "From") {
       dataStart = i + 1;
       break;
     }
@@ -189,11 +200,13 @@ function parseSlipRows(rows: string[][], periodLabel: string): SlipRecord[] {
     const row = rows[i];
     if (!row || row.length < 4) continue;
 
-    const from = (row[0] || "").trim();
-    const to = (row[1] || "").trim();
-    const slipType = (row[3] || "").trim();
-    const amountStr = row[6] || "0";
-    const amount = parseFloat(amountStr.replace(/,/g, "")) || 0;
+    const from = String(row[0] ?? "").trim();
+    const to = String(row[1] ?? "").trim();
+    const slipType = String(row[3] ?? "").trim();
+    const rawAmount = row[6];
+    const amount = typeof rawAmount === "number"
+      ? rawAmount
+      : parseFloat(String(rawAmount || "0").replace(/,/g, "")) || 0;
 
     if (!from || !to || !slipType) continue;
     if (!["One to One", "Referral", "TYFCB"].includes(slipType)) continue;
@@ -234,7 +247,7 @@ export async function fetchAllSlips(
   // 3. Fetch data from each file in parallel
   const results = await Promise.allSettled(
     filesWithDates.map(async (f) => {
-      const rows = await fetchSheetData(f.id, apiKey);
+      const rows = await fetchSheetData(f.id, f.mimeType, apiKey);
       return parseSlipRows(rows, f.label);
     })
   );
