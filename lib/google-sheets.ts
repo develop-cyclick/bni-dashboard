@@ -118,7 +118,7 @@ async function listFilesInFolder(
   const fields = encodeURIComponent("files(id,name,mimeType,modifiedTime)");
   const url = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=${fields}&orderBy=name&pageSize=100&key=${apiKey}`;
 
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { next: { revalidate: 21600 } });
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(`Failed to list Drive files: ${res.status} — ${errText}`);
@@ -161,7 +161,7 @@ async function fetchSheetData(
     url = `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
   }
 
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { next: { revalidate: 21600 } });
   if (!res.ok) {
     console.error(`Failed to fetch file ${fileId}: ${res.status}`);
     return [];
