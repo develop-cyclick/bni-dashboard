@@ -173,87 +173,98 @@ export default function BNIDashboard(){
   );
 
   return(
-    <div style={{height:"100vh",overflow:"hidden",background:"#f5f6fa",color:"#1e293b",fontFamily:"'Noto Sans Thai',sans-serif",display:"flex"}}>
+    <div style={{height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",background:"#f5f6fa",color:"#1e293b",fontFamily:"'Noto Sans Thai',sans-serif"}}>
       <style>{cssText}</style>
 
-      {/* Left Sidebar */}
-      <div style={{width:196,flexShrink:0,height:"100vh",overflowY:"auto",background:"#fff",borderRight:"1px solid #e8ecf2",display:"flex",flexDirection:"column",padding:"16px 12px",gap:0}}>
-        {/* Logo */}
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20}}>
-          <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,color:"#fff",flexShrink:0}}>A</div>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:"#1e293b",letterSpacing:"-.01em",lineHeight:1.2}}>BNI Active</div>
-            <div style={{fontSize:10,color:"#94a3b8",lineHeight:1.3}}>Network Dashboard</div>
-          </div>
+      {/* ── Header ── */}
+      <div style={{background:"#fff",borderBottom:"1px solid #e8ecf2",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+        <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:"#fff",flexShrink:0}}>A</div>
+        <div>
+          <h1 style={{fontSize:15,fontWeight:700,color:"#1e293b",letterSpacing:"-.01em",lineHeight:1.2}}>BNI Active — Network Dashboard</h1>
+          <p style={{fontSize:10,color:"#94a3b8"}}>Bangkok · สมาชิก {members.length} ท่าน</p>
         </div>
-
-        {/* Member count */}
-        <div style={{fontSize:10,color:"#94a3b8",marginBottom:16,paddingBottom:16,borderBottom:"1px solid #f1f5f9"}}>Bangkok · สมาชิก {members.length} ท่าน</div>
-
-        {/* View selector */}
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",letterSpacing:".05em"}}>ประเภท</div>
-          <div style={{display:"flex",flexDirection:"column",gap:3}}>
-            {VIEWS.map(v=>(
-              <button key={v.key} onClick={()=>{setView(v.key);setSel(null);}}
-                style={{padding:"7px 10px",borderRadius:8,border:view===v.key?"1.5px solid #6366f1":"1px solid transparent",background:view===v.key?"#eef2ff":"transparent",color:view===v.key?"#4338ca":"#64748b",cursor:"pointer",fontSize:12,fontWeight:view===v.key?600:500,display:"flex",alignItems:"center",gap:6,fontFamily:"inherit",transition:"all .15s",textAlign:"left"}}>
-                <span style={{fontSize:14}}>{v.icon}</span>{v.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Period filter */}
-        <div style={{marginBottom:16,paddingBottom:16,borderBottom:"1px solid #f1f5f9"}}>
-          <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",letterSpacing:".05em"}}>ช่วงเวลา</div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <select value={fromPeriod} onChange={e=>{setFromPeriod(e.target.value);setSel(null);}}
-              style={{padding:"5px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#334155",cursor:"pointer",fontSize:10,fontFamily:"inherit",outline:"none",width:"100%"}}>
-              <option value="">เริ่มต้น</option>
-              {periods.map(p=><option key={p} value={p}>{p}</option>)}
-            </select>
-            <select value={toPeriod} onChange={e=>{setToPeriod(e.target.value);setSel(null);}}
-              style={{padding:"5px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#334155",cursor:"pointer",fontSize:10,fontFamily:"inherit",outline:"none",width:"100%"}}>
-              <option value="">สิ้นสุด</option>
-              {periods.map(p=><option key={p} value={p}>{p}</option>)}
-            </select>
-            {(fromPeriod||toPeriod)&&(
-              <button onClick={()=>{setFromPeriod("");setToPeriod("");setSel(null);}}
-                style={{padding:"4px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",color:"#94a3b8",cursor:"pointer",fontSize:10,fontFamily:"inherit",width:"100%"}}>
-                ✕ ล้างตัวกรอง
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Spacer */}
-        <div style={{flex:1}}/>
-
-        {/* Refresh + updatedAt */}
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {updatedAt&&<div style={{fontSize:9,color:"#94a3b8",textAlign:"center"}}>อัพเดต {updatedAt}</div>}
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+          {updatedAt&&<span style={{fontSize:10,color:"#94a3b8"}}>อัพเดต {updatedAt}</span>}
           <button onClick={()=>load(true)} disabled={refreshing}
-            style={{padding:"7px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:refreshing?"#f8fafc":"#fff",color:refreshing?"#94a3b8":"#64748b",cursor:refreshing?"not-allowed":"pointer",fontSize:11,fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:4,width:"100%"}}>
+            style={{padding:"5px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:refreshing?"#f8fafc":"#fff",color:refreshing?"#94a3b8":"#64748b",cursor:refreshing?"not-allowed":"pointer",fontSize:11,fontFamily:"inherit",display:"flex",alignItems:"center",gap:4}}>
             {refreshing?"⏳ กำลังรีเฟรช...":"🔄 รีเฟรช"}
           </button>
         </div>
       </div>
 
-      {/* Right Main */}
-      <div style={{flex:1,height:"100vh",overflowY:"auto",padding:"12px",display:"flex",flexDirection:"column",gap:8,minWidth:0}}>
+      {/* ── Filter Bar ── */}
+      <div style={{background:"#fff",borderBottom:"1px solid #e8ecf2",padding:"7px 16px",display:"flex",alignItems:"center",gap:6,flexShrink:0,flexWrap:"wrap"}}>
+        {VIEWS.map(v=>(
+          <button key={v.key} onClick={()=>{setView(v.key);setSel(null);}}
+            style={{padding:"4px 12px",borderRadius:7,border:view===v.key?"1.5px solid #6366f1":"1px solid #e2e8f0",background:view===v.key?"#eef2ff":"transparent",color:view===v.key?"#4338ca":"#64748b",cursor:"pointer",fontSize:12,fontWeight:view===v.key?600:500,display:"flex",alignItems:"center",gap:4,fontFamily:"inherit",transition:"all .15s"}}>
+            <span style={{fontSize:13}}>{v.icon}</span>{v.label}
+          </button>
+        ))}
+        <div style={{width:1,height:18,background:"#e2e8f0",margin:"0 4px"}}/>
+        <span style={{fontSize:11,color:"#94a3b8",fontWeight:500}}>ช่วง</span>
+        <select value={fromPeriod} onChange={e=>{setFromPeriod(e.target.value);setSel(null);}}
+          style={{padding:"4px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#334155",cursor:"pointer",fontSize:11,fontFamily:"inherit",outline:"none"}}>
+          <option value="">เริ่มต้น</option>
+          {periods.map(p=><option key={p} value={p}>{p}</option>)}
+        </select>
+        <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
+        <select value={toPeriod} onChange={e=>{setToPeriod(e.target.value);setSel(null);}}
+          style={{padding:"4px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#334155",cursor:"pointer",fontSize:11,fontFamily:"inherit",outline:"none"}}>
+          <option value="">สิ้นสุด</option>
+          {periods.map(p=><option key={p} value={p}>{p}</option>)}
+        </select>
+        {(fromPeriod||toPeriod)&&(
+          <button onClick={()=>{setFromPeriod("");setToPeriod("");setSel(null);}}
+            style={{padding:"4px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",color:"#94a3b8",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>
+            ✕
+          </button>
+        )}
+      </div>
 
-      {/* Heatmap */}
-      <div style={{borderRadius:12,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",padding:"14px",flex:1,minHeight:0,display:"flex",flexDirection:"column"}}>
-        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10,flexShrink:0}}>
-          <span style={{fontSize:14}}>{vc.icon}</span>
-          <h2 style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{vc.label + " Heatmap"}</h2>
-          <span style={{fontSize:10,color:"#94a3b8",marginLeft:6}}>{is121?"สมาชิก ↔ สมาชิก (2-way) · คลิกช่องเพื่อดูรายละเอียด":"แถวนอน (From) → แถวตั้ง (To) · คลิกช่องเพื่อดูรายละเอียด"}</span>
-        </div>
+      {/* ── Scrollable Body ── */}
+      <div style={{flex:1,minHeight:0,overflowY:"auto",padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
 
-        {members.length===0?(
-          <div style={{textAlign:"center",padding:30,color:"#94a3b8",fontSize:13}}>ไม่มีข้อมูล</div>
-        ):(
-          <div style={{overflowX:"auto",overflowY:"auto",flex:1,minHeight:0}}>
+        {/* Middle row: Stat Cards (left) + Heatmap (right) */}
+        <div style={{display:"flex",gap:8,flex:1,minHeight:0}}>
+
+          {/* Left: Stat Cards */}
+          <div style={{width:160,flexShrink:0,display:"flex",flexDirection:"column",gap:6}}>
+            {[
+              {l:isTy?"ยอดรวม (฿)":"ทั้งหมด",v:isTy?("฿"+fmt(summary.total)):summary.total,cl:"#6366f1"},
+              {l:"ผู้ให้",v:summary.givers,cl:"#0ea5e9"},
+              {l:"ผู้รับ",v:summary.receivers,cl:"#8b5cf6"},
+              {l:is121?"Active มาก":"Top Giver",v:summary.tg?sn(summary.tg[0]):"-",s:summary.tg?(isTy?("฿"+fmt(summary.tg[1])):(summary.tg[1]+(is121?" คู่":" ครั้ง"))):"",cl:"#f59e0b"},
+              {l:is121?"Active รอง":"Top Receiver",v:summary.tr?sn(summary.tr[0]):"-",s:summary.tr?(isTy?("฿"+fmt(summary.tr[1])):(summary.tr[1]+(is121?" คู่":" ครั้ง"))):"",cl:"#10b981"},
+            ].map((c,i)=>(
+              <div key={i} style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
+                <div style={{fontSize:9,color:"#94a3b8",marginBottom:3,fontWeight:500}}>{c.l}</div>
+                <div style={{fontSize:15,fontWeight:700,color:c.cl,fontFamily:"'DM Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.v}</div>
+                {c.s&&<div style={{fontSize:9,color:"#94a3b8",marginTop:1}}>{c.s}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* Right: Heatmap */}
+          <div style={{flex:1,minWidth:0,borderRadius:12,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",padding:"14px",display:"flex",flexDirection:"column",minHeight:300}}>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8,flexShrink:0}}>
+              <span style={{fontSize:14}}>{vc.icon}</span>
+              <h2 style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{vc.label + " Heatmap"}</h2>
+              <span style={{fontSize:10,color:"#94a3b8",marginLeft:4}}>{is121?"สมาชิก ↔ สมาชิก (2-way) · คลิกช่องเพื่อดูรายละเอียด":"แถวนอน (From) → แถวตั้ง (To) · คลิกช่องเพื่อดูรายละเอียด"}</span>
+            </div>
+
+            {/* Detail bar */}
+            {sel&&(
+              <div style={{marginBottom:8,padding:"6px 12px",borderRadius:7,background:"#eef2ff",border:"1px solid #c7d2fe",display:"flex",alignItems:"center",gap:10,fontSize:11,flexShrink:0}}>
+                <span style={{fontWeight:600,color:"#4338ca"}}>{sel.f+(is121?" ↔ ":" → ")+sel.t}</span>
+                <span style={{color:"#1e293b",fontWeight:600}}>{isTy?("฿"+fmt(sel.v)):(sel.v+(is121?" ครั้ง (รวม 2 ฝ่าย)":" ครั้ง"))}</span>
+                <button onClick={()=>setSel(null)} style={{marginLeft:"auto",background:"none",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:13}}>✕</button>
+              </div>
+            )}
+
+            {members.length===0?(
+              <div style={{textAlign:"center",padding:30,color:"#94a3b8",fontSize:13}}>ไม่มีข้อมูล</div>
+            ):(
+              <div style={{overflowX:"auto",overflowY:"auto",flex:1,minHeight:0}}>
             <div style={{display:"inline-block",minWidth:"fit-content"}}>
               {/* Col headers */}
               <div style={{display:"flex",gap:1}}>
@@ -309,48 +320,21 @@ export default function BNIDashboard(){
           </div>
         )}
 
-        {/* Legend */}
-        <div style={{marginTop:10,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-          <span style={{fontSize:10,color:"#94a3b8"}}>ความเข้ม:</span>
-          <div style={{display:"flex",gap:2,alignItems:"center"}}>
-            <span style={{fontSize:9,color:"#94a3b8"}}>น้อย</span>
-            {[0.08,0.2,0.35,0.5,0.68].map((op,i)=>(
-              <div key={i} style={{width:14,height:10,borderRadius:2,backgroundColor:isTy?("rgba(245,158,11,"+op+")"):("rgba(99,102,241,"+op+")")}}/>
-            ))}
-            <span style={{fontSize:9,color:"#94a3b8"}}>มาก</span>
-          </div>
-        </div>
-      </div>
+            {/* Legend */}
+            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+              <span style={{fontSize:9,color:"#94a3b8"}}>ความเข้ม:</span>
+              <div style={{display:"flex",gap:2,alignItems:"center"}}>
+                <span style={{fontSize:9,color:"#94a3b8"}}>น้อย</span>
+                {[0.08,0.2,0.35,0.5,0.68].map((op,i)=>(
+                  <div key={i} style={{width:12,height:8,borderRadius:2,backgroundColor:isTy?("rgba(245,158,11,"+op+")"):("rgba(99,102,241,"+op+")")}}/>
+                ))}
+                <span style={{fontSize:9,color:"#94a3b8"}}>มาก</span>
+              </div>
+            </div>
+          </div>{/* end Heatmap */}
+        </div>{/* end Middle Row */}
 
-      {/* Detail */}
-      {sel&&(
-        <div style={{flexShrink:0}}>
-          <div style={{padding:"8px 14px",borderRadius:8,background:"#eef2ff",border:"1px solid #c7d2fe",display:"flex",alignItems:"center",gap:12,fontSize:12}}>
-            <span style={{fontWeight:600,color:"#4338ca"}}>{sel.f + (is121?" ↔ ":" → ") + sel.t}</span>
-            <span style={{color:"#1e293b",fontWeight:600}}>{isTy?("฿"+fmt(sel.v)):(sel.v+(is121?" ครั้ง (รวม 2 ฝ่าย)":" ครั้ง"))}</span>
-            <button onClick={()=>setSel(null)} style={{marginLeft:"auto",background:"none",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:14}}>✕</button>
-          </div>
-        </div>
-      )}
-
-      {/* Summary Cards */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,flexShrink:0}}>
-        {[
-          {l:isTy?"ยอดรวม (฿)":"จํานวนทั้งหมด",v:isTy?("฿"+fmt(summary.total)):summary.total,cl:"#6366f1"},
-          {l:"ผู้ให้",v:summary.givers,cl:"#0ea5e9"},
-          {l:"ผู้รับ",v:summary.receivers,cl:"#8b5cf6"},
-          {l:is121?"Active มากสุด":"Top Giver",v:summary.tg?sn(summary.tg[0]):"-",s:summary.tg?(isTy?("฿"+fmt(summary.tg[1])):(summary.tg[1]+(is121?" คู่":" ครั้ง"))):"",cl:"#f59e0b"},
-          {l:is121?"Active รองลงมา":"Top Receiver",v:summary.tr?sn(summary.tr[0]):"-",s:summary.tr?(isTy?("฿"+fmt(summary.tr[1])):(summary.tr[1]+(is121?" คู่":" ครั้ง"))):"",cl:"#10b981"},
-        ].map((c,i)=>(
-          <div key={i} style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:10,color:"#94a3b8",marginBottom:4,fontWeight:500}}>{c.l}</div>
-            <div style={{fontSize:16,fontWeight:700,color:c.cl,fontFamily:"'DM Mono',monospace"}}>{c.v}</div>
-            {c.s&&<div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>{c.s}</div>}
-          </div>
-        ))}
-      </div>
-
-      {/* Bottom Section */}
+        {/* ── Bottom Section ── */}
       {is121&&stats121?(
         <div style={{display:"grid",gridTemplateColumns:"auto 1fr auto",gap:8,flexShrink:0}}>
           {/* Coverage */}
@@ -418,7 +402,7 @@ export default function BNIDashboard(){
         </div>
       )}
 
-      </div>{/* end Right Main */}
+      </div>{/* end Scrollable Body */}
     </div>
   );
 }
