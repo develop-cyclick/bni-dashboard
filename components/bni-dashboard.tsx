@@ -173,8 +173,9 @@ export default function BNIDashboard(){
   );
 
   return(
-    <div style={{height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",background:"#f5f6fa",color:"#1e293b",fontFamily:"'Noto Sans Thai',sans-serif"}}>
+    <div style={{height:"100vh",background:"#f5f6fa",display:"flex",justifyContent:"center",fontFamily:"'Noto Sans Thai',sans-serif",color:"#1e293b"}}>
       <style>{cssText}</style>
+      <div style={{width:"100%",maxWidth:1280,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       {/* ── Header ── */}
       <div style={{background:"#fff",borderBottom:"1px solid #e8ecf2",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
@@ -227,8 +228,9 @@ export default function BNIDashboard(){
         {/* Middle row: Stat Cards (left) + Heatmap (right) */}
         <div style={{display:"flex",gap:8,flex:1,minHeight:0}}>
 
-          {/* Left: Stat Cards */}
-          <div style={{width:160,flexShrink:0,display:"flex",flexDirection:"column",gap:6}}>
+          {/* Left: Stat Cards + Bottom Section */}
+          <div style={{width:196,flexShrink:0,display:"flex",flexDirection:"column",gap:6,overflowY:"auto"}}>
+            {/* Stat Cards */}
             {[
               {l:isTy?"ยอดรวม (฿)":"ทั้งหมด",v:isTy?("฿"+fmt(summary.total)):summary.total,cl:"#6366f1"},
               {l:"ผู้ให้",v:summary.givers,cl:"#0ea5e9"},
@@ -236,12 +238,83 @@ export default function BNIDashboard(){
               {l:is121?"Active มาก":"Top Giver",v:summary.tg?sn(summary.tg[0]):"-",s:summary.tg?(isTy?("฿"+fmt(summary.tg[1])):(summary.tg[1]+(is121?" คู่":" ครั้ง"))):"",cl:"#f59e0b"},
               {l:is121?"Active รอง":"Top Receiver",v:summary.tr?sn(summary.tr[0]):"-",s:summary.tr?(isTy?("฿"+fmt(summary.tr[1])):(summary.tr[1]+(is121?" คู่":" ครั้ง"))):"",cl:"#10b981"},
             ].map((c,i)=>(
-              <div key={i} style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
+              <div key={i} style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",flexShrink:0}}>
                 <div style={{fontSize:9,color:"#94a3b8",marginBottom:3,fontWeight:500}}>{c.l}</div>
                 <div style={{fontSize:15,fontWeight:700,color:c.cl,fontFamily:"'DM Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.v}</div>
                 {c.s&&<div style={{fontSize:9,color:"#94a3b8",marginTop:1}}>{c.s}</div>}
               </div>
             ))}
+
+            {/* Divider */}
+            <div style={{height:1,background:"#e8ecf2",flexShrink:0,marginTop:2}}/>
+
+            {/* 121 Stats or Rankings */}
+            {is121&&stats121?(
+              <>
+                {/* Coverage */}
+                <div style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",flexShrink:0}}>
+                  <div style={{fontSize:9,color:"#94a3b8",fontWeight:500,marginBottom:5}}>Coverage 1-2-1</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:4,marginBottom:6}}>
+                    <span style={{fontSize:22,fontWeight:700,color:"#6366f1",fontFamily:"'DM Mono',monospace"}}>{stats121.coveragePct}%</span>
+                    <span style={{fontSize:9,color:"#94a3b8"}}>{stats121.activeCount}/{stats121.total} คน</span>
+                  </div>
+                  <div style={{height:5,borderRadius:3,background:"#eef2ff",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:stats121.coveragePct+"%",borderRadius:3,background:"linear-gradient(90deg,#6366f1,#a855f7)"}}/>
+                  </div>
+                </div>
+
+                {/* Unique Pairs */}
+                <div style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",flexShrink:0}}>
+                  <div style={{fontSize:9,color:"#94a3b8",fontWeight:500,marginBottom:3}}>คู่ 1-2-1 ทั้งหมด</div>
+                  <div style={{fontSize:22,fontWeight:700,color:"#8b5cf6",fontFamily:"'DM Mono',monospace"}}>{stats121.uniquePairs}</div>
+                  <div style={{fontSize:9,color:"#94a3b8"}}>unique pairs</div>
+                </div>
+
+                {/* Distribution */}
+                <div style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",flexShrink:0}}>
+                  <div style={{fontSize:9,color:"#94a3b8",fontWeight:500,marginBottom:8}}>การกระจายตัว (คู่/คน)</div>
+                  <div style={{display:"flex",gap:4,height:48,alignItems:"flex-end"}}>
+                    {(Object.entries(stats121.dist) as [string,number][]).map(([label,count])=>{
+                      const maxCount=Math.max(...Object.values(stats121.dist),1);
+                      const pct=Math.round((count/stats121.total)*100);
+                      return(
+                        <div key={label} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
+                          <span style={{fontSize:8,color:"#6366f1",fontWeight:600,fontFamily:"'DM Mono',monospace"}}>{count}</span>
+                          <div style={{width:"100%",borderRadius:"2px 2px 0 0",background:"linear-gradient(180deg,#6366f1,#a5b4fc)",height:Math.max(3,(count/maxCount)*30)+"px"}}/>
+                          <span style={{fontSize:8,color:"#94a3b8",textAlign:"center",whiteSpace:"nowrap"}}>{label}</span>
+                          <span style={{fontSize:8,color:"#c7d2fe"}}>{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ):(
+              <>
+                {[{title:"🌟 Top Gain",data:Object.entries(ct).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,7),cl:"#10b981",grad:"linear-gradient(90deg,#ecfdf5,#a7f3d0)"},
+                  {title:"🏆 Top Give",data:Object.entries(rt).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,7),cl:"#6366f1",grad:"linear-gradient(90deg,#eef2ff,#c7d2fe)"}
+                ].map((sec)=>(
+                  <div key={sec.title} style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",flexShrink:0}}>
+                    <div style={{fontSize:10,fontWeight:600,color:"#1e293b",marginBottom:7}}>{sec.title}</div>
+                    {sec.data.map(([name,val],i)=>{
+                      const maxB=sec.data[0][1];
+                      return(
+                        <div key={name} style={{display:"flex",alignItems:"center",gap:4,marginBottom:3}}>
+                          <span style={{fontSize:9,color:i<3?"#f59e0b":"#94a3b8",fontWeight:600,width:12,textAlign:"right",flexShrink:0}}>{i+1}</span>
+                          <div style={{flex:1,position:"relative",height:17,borderRadius:3,overflow:"hidden",background:"#f8fafc"}}>
+                            <div style={{position:"absolute",top:0,left:0,height:"100%",width:((val/maxB)*100)+"%",borderRadius:3,background:sec.grad}}/>
+                            <span style={{position:"relative",zIndex:1,fontSize:9,color:"#334155",paddingLeft:5,lineHeight:"17px",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"block"}}>{sn(name)}</span>
+                          </div>
+                          <span style={{fontSize:9,fontWeight:600,color:sec.cl,fontFamily:"'DM Mono',monospace",minWidth:28,textAlign:"right",flexShrink:0}}>
+                            {isTy?Math.round(val/1000)+"k":val}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </>
+            )}
           </div>
 
           {/* Right: Heatmap */}
@@ -334,75 +407,8 @@ export default function BNIDashboard(){
           </div>{/* end Heatmap */}
         </div>{/* end Middle Row */}
 
-        {/* ── Bottom Section ── */}
-      {is121&&stats121?(
-        <div style={{display:"grid",gridTemplateColumns:"auto 1fr auto",gap:8,flexShrink:0}}>
-          {/* Coverage */}
-          <div style={{padding:"12px 16px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",minWidth:160}}>
-            <div style={{fontSize:10,color:"#94a3b8",fontWeight:500,marginBottom:6}}>Coverage — สมาชิกที่ทำ 1-2-1</div>
-            <div style={{display:"flex",alignItems:"baseline",gap:4,marginBottom:8}}>
-              <span style={{fontSize:28,fontWeight:700,color:"#6366f1",fontFamily:"'DM Mono',monospace"}}>{stats121.coveragePct}%</span>
-              <span style={{fontSize:10,color:"#94a3b8"}}>{stats121.activeCount}/{stats121.total} คน</span>
-            </div>
-            <div style={{height:6,borderRadius:3,background:"#eef2ff",overflow:"hidden"}}>
-              <div style={{height:"100%",width:stats121.coveragePct+"%",borderRadius:3,background:"linear-gradient(90deg,#6366f1,#a855f7)"}}/>
-            </div>
-          </div>
-
-          {/* Distribution */}
-          <div style={{padding:"12px 16px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
-            <div style={{fontSize:10,color:"#94a3b8",fontWeight:500,marginBottom:6}}>การกระจายตัว — จำนวนคู่ 1-2-1 ต่อสมาชิก</div>
-            <div style={{display:"flex",gap:6,height:60,alignItems:"flex-end"}}>
-              {(Object.entries(stats121.dist) as [string,number][]).map(([label,count])=>{
-                const maxCount=Math.max(...Object.values(stats121.dist),1);
-                const pct=Math.round((count/stats121.total)*100);
-                return(
-                  <div key={label} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                    <span style={{fontSize:9,color:"#6366f1",fontWeight:600,fontFamily:"'DM Mono',monospace"}}>{count}</span>
-                    <div style={{width:"100%",borderRadius:"3px 3px 0 0",background:"linear-gradient(180deg,#6366f1,#a5b4fc)",height:Math.max(4,(count/maxCount)*40)+"px"}}/>
-                    <span style={{fontSize:9,color:"#94a3b8",textAlign:"center"}}>{label} คู่</span>
-                    <span style={{fontSize:9,color:"#c7d2fe",fontWeight:500}}>{pct}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Unique Pairs */}
-          <div style={{padding:"12px 16px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",minWidth:130,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-            <div style={{fontSize:10,color:"#94a3b8",fontWeight:500,marginBottom:4,textAlign:"center"}}>คู่ 1-2-1 ทั้งหมด</div>
-            <div style={{fontSize:32,fontWeight:700,color:"#8b5cf6",fontFamily:"'DM Mono',monospace"}}>{stats121.uniquePairs}</div>
-            <div style={{fontSize:10,color:"#94a3b8"}}>unique pairs</div>
-          </div>
-        </div>
-      ):(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,flexShrink:0}}>
-          {[{title:"🌟 Top Gain",data:Object.entries(ct).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10),cl:"#10b981"},
-            {title:"🏆 Top Give",data:Object.entries(rt).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10),cl:"#6366f1"}
-          ].map((sec,si)=>(
-            <div key={si} style={{padding:12,borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
-              <h3 style={{fontSize:12,fontWeight:600,color:"#1e293b",marginBottom:8}}>{sec.title}</h3>
-              {sec.data.map(([name,val],i)=>{
-                const maxB=sec.data[0][1];
-                return(
-                  <div key={name} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                    <span style={{fontSize:10,color:i<3?"#f59e0b":"#94a3b8",fontWeight:600,width:14,textAlign:"right"}}>{i+1}</span>
-                    <div style={{flex:1,position:"relative",height:20,borderRadius:4,overflow:"hidden",background:"#f8fafc"}}>
-                      <div style={{position:"absolute",top:0,left:0,height:"100%",width:((val/maxB)*100)+"%",borderRadius:4,background:si===0?"linear-gradient(90deg,#ecfdf5,#a7f3d0)":"linear-gradient(90deg,#eef2ff,#c7d2fe)"}}/>
-                      <span style={{position:"relative",zIndex:1,fontSize:10,color:"#334155",paddingLeft:6,lineHeight:"20px",fontWeight:500}}>{sn(name)}</span>
-                    </div>
-                    <span style={{fontSize:10,fontWeight:600,color:sec.cl,fontFamily:"'DM Mono',monospace",minWidth:40,textAlign:"right"}}>
-                      {isTy?("฿"+fmt(val)):val}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      )}
-
       </div>{/* end Scrollable Body */}
+      </div>{/* end maxWidth wrapper */}
     </div>
   );
 }
