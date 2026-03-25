@@ -17,24 +17,28 @@ export default function BNIDashboard(){
   const[loading,setLoading]=useState(true);
   const[error,setError]=useState<string|null>(null);
   const[updatedAt,setUpdatedAt]=useState("");
+  const[refreshing,setRefreshing]=useState(false);
 
-  useEffect(()=>{
-    async function load(){
-      try{
-        const res=await fetch("/api/slips");
-        if(!res.ok)throw new Error("Failed");
-        const data=await res.json();
-        setRawData(data.records);
-        setPeriods(data.periods);
-        setUpdatedAt(data.updatedAt);
-      }catch(e){
-        setError("ไม่สามารถโหลดข้อมูลได้");
-      }finally{
-        setLoading(false);
-      }
+  async function load(bust=false){
+    if(bust)setRefreshing(true);else setLoading(true);
+    try{
+      const url=bust?`/api/slips?_t=${Date.now()}`:"/api/slips";
+      const res=await fetch(url);
+      if(!res.ok)throw new Error("Failed");
+      const data=await res.json();
+      setRawData(data.records);
+      setPeriods(data.periods);
+      setUpdatedAt(data.updatedAt);
+      setError(null);
+    }catch{
+      setError("ไม่สามารถโหลดข้อมูลได้");
+    }finally{
+      setLoading(false);
+      setRefreshing(false);
     }
-    load();
-  },[]);
+  }
+
+  useEffect(()=>{load();},[]);
 
   const[view,setView]=useState("121");
   const[fromPeriod,setFromPeriod]=useState("");
@@ -95,6 +99,22 @@ export default function BNIDashboard(){
     const tr=Object.entries(ct).sort((a,b)=>b[1]-a[1])[0];
     return{total,givers,receivers,tg,tr};
   },[fd,isTy,rt,ct]);
+
+  const stats121=useMemo(()=>{
+    if(!is121)return null;
+    const uniquePairs=members.reduce((sum,a)=>sum+members.filter(b=>b>a&&(mat[a]?.[b]||0)>0).length,0);
+    const activeMembers=members.filter(m=>(rt[m]||0)>0);
+    const coveragePct=members.length>0?Math.round((activeMembers.length/members.length)*100):0;
+    const dist={"0":0,"1-2":0,"3-5":0,"6+":0};
+    members.forEach(m=>{
+      const pairs=members.filter(b=>(mat[m]?.[b]||0)>0).length;
+      if(pairs===0)dist["0"]++;
+      else if(pairs<=2)dist["1-2"]++;
+      else if(pairs<=5)dist["3-5"]++;
+      else dist["6+"]++;
+    });
+    return{uniquePairs,activeCount:activeMembers.length,total:members.length,coveragePct,dist};
+  },[is121,members,mat,rt]);
 
   const CS=Math.min(22, Math.max(16, Math.floor(700/members.length)));
 
@@ -163,6 +183,11 @@ export default function BNIDashboard(){
           <h1 style={{fontSize:18,fontWeight:700,color:"#1e293b",letterSpacing:"-.01em"}}>BNI Active — Network Dashboard</h1>
           <p style={{fontSize:11,color:"#94a3b8"}}>{"Bangkok · สมาชิก " + members.length + " ท่าน"}</p>
         </div>
+        {updatedAt&&<span style={{fontSize:10,color:"#94a3b8"}}>อัพเดต {updatedAt}</span>}
+        <button onClick={()=>load(true)} disabled={refreshing}
+          style={{padding:"5px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:refreshing?"#94a3b8":"#64748b",cursor:refreshing?"not-allowed":"pointer",fontSize:11,fontFamily:"inherit",display:"flex",alignItems:"center",gap:4}}>
+          {refreshing?"⏳ กำลังรีเฟรช...":"🔄 รีเฟรช"}
+        </button>
       </div>
 
       {/* Controls */}
@@ -305,31 +330,73 @@ export default function BNIDashboard(){
         </div>
       </div>
 
-      {/* Rankings */}
-      <div style={{maxWidth:1200,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        {[{title:"🏆 Top Givers",data:Object.entries(rt).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10),cl:"#6366f1"},
-          {title:"🎯 Top Receivers",data:Object.entries(ct).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10),cl:"#10b981"}
-        ].map((sec,si)=>(
-          <div key={si} style={{padding:12,borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
-            <h3 style={{fontSize:12,fontWeight:600,color:"#1e293b",marginBottom:8}}>{sec.title}</h3>
-            {sec.data.map(([name,val],i)=>{
-              const maxB=sec.data[0][1];
-              return(
-                <div key={name} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                  <span style={{fontSize:10,color:i<3?"#f59e0b":"#94a3b8",fontWeight:600,width:14,textAlign:"right"}}>{i+1}</span>
-                  <div style={{flex:1,position:"relative",height:20,borderRadius:4,overflow:"hidden",background:"#f8fafc"}}>
-                    <div style={{position:"absolute",top:0,left:0,height:"100%",width:((val/maxB)*100)+"%",borderRadius:4,background:si===0?"linear-gradient(90deg,#eef2ff,#c7d2fe)":"linear-gradient(90deg,#ecfdf5,#a7f3d0)"}}/>
-                    <span style={{position:"relative",zIndex:1,fontSize:10,color:"#334155",paddingLeft:6,lineHeight:"20px",fontWeight:500}}>{sn(name)}</span>
-                  </div>
-                  <span style={{fontSize:10,fontWeight:600,color:sec.cl,fontFamily:"'DM Mono',monospace",minWidth:40,textAlign:"right"}}>
-                    {isTy?("฿"+fmt(val)):val}
-                  </span>
-                </div>
-              );
-            })}
+      {/* Bottom Section */}
+      {is121&&stats121?(
+        <div style={{maxWidth:1200,margin:"0 auto",display:"grid",gridTemplateColumns:"auto 1fr auto",gap:8}}>
+          {/* Coverage */}
+          <div style={{padding:"12px 16px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",minWidth:160}}>
+            <div style={{fontSize:10,color:"#94a3b8",fontWeight:500,marginBottom:6}}>Coverage — สมาชิกที่ทำ 1-2-1</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:4,marginBottom:8}}>
+              <span style={{fontSize:28,fontWeight:700,color:"#6366f1",fontFamily:"'DM Mono',monospace"}}>{stats121.coveragePct}%</span>
+              <span style={{fontSize:10,color:"#94a3b8"}}>{stats121.activeCount}/{stats121.total} คน</span>
+            </div>
+            <div style={{height:6,borderRadius:3,background:"#eef2ff",overflow:"hidden"}}>
+              <div style={{height:"100%",width:stats121.coveragePct+"%",borderRadius:3,background:"linear-gradient(90deg,#6366f1,#a855f7)"}}/>
+            </div>
           </div>
-        ))}
-      </div>
+
+          {/* Distribution */}
+          <div style={{padding:"12px 16px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
+            <div style={{fontSize:10,color:"#94a3b8",fontWeight:500,marginBottom:6}}>การกระจายตัว — จำนวนคู่ 1-2-1 ต่อสมาชิก</div>
+            <div style={{display:"flex",gap:6,height:60,alignItems:"flex-end"}}>
+              {(Object.entries(stats121.dist) as [string,number][]).map(([label,count])=>{
+                const maxCount=Math.max(...Object.values(stats121.dist),1);
+                const pct=Math.round((count/stats121.total)*100);
+                return(
+                  <div key={label} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                    <span style={{fontSize:9,color:"#6366f1",fontWeight:600,fontFamily:"'DM Mono',monospace"}}>{count}</span>
+                    <div style={{width:"100%",borderRadius:"3px 3px 0 0",background:"linear-gradient(180deg,#6366f1,#a5b4fc)",height:Math.max(4,(count/maxCount)*40)+"px"}}/>
+                    <span style={{fontSize:9,color:"#94a3b8",textAlign:"center"}}>{label} คู่</span>
+                    <span style={{fontSize:9,color:"#c7d2fe",fontWeight:500}}>{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Unique Pairs */}
+          <div style={{padding:"12px 16px",borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)",minWidth:130,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{fontSize:10,color:"#94a3b8",fontWeight:500,marginBottom:4,textAlign:"center"}}>คู่ 1-2-1 ทั้งหมด</div>
+            <div style={{fontSize:32,fontWeight:700,color:"#8b5cf6",fontFamily:"'DM Mono',monospace"}}>{stats121.uniquePairs}</div>
+            <div style={{fontSize:10,color:"#94a3b8"}}>unique pairs</div>
+          </div>
+        </div>
+      ):(
+        <div style={{maxWidth:1200,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          {[{title:"🌟 Top Gain",data:Object.entries(ct).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10),cl:"#10b981"},
+            {title:"🏆 Top Give",data:Object.entries(rt).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10),cl:"#6366f1"}
+          ].map((sec,si)=>(
+            <div key={si} style={{padding:12,borderRadius:10,background:"#fff",border:"1px solid #e8ecf2",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
+              <h3 style={{fontSize:12,fontWeight:600,color:"#1e293b",marginBottom:8}}>{sec.title}</h3>
+              {sec.data.map(([name,val],i)=>{
+                const maxB=sec.data[0][1];
+                return(
+                  <div key={name} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                    <span style={{fontSize:10,color:i<3?"#f59e0b":"#94a3b8",fontWeight:600,width:14,textAlign:"right"}}>{i+1}</span>
+                    <div style={{flex:1,position:"relative",height:20,borderRadius:4,overflow:"hidden",background:"#f8fafc"}}>
+                      <div style={{position:"absolute",top:0,left:0,height:"100%",width:((val/maxB)*100)+"%",borderRadius:4,background:si===0?"linear-gradient(90deg,#ecfdf5,#a7f3d0)":"linear-gradient(90deg,#eef2ff,#c7d2fe)"}}/>
+                      <span style={{position:"relative",zIndex:1,fontSize:10,color:"#334155",paddingLeft:6,lineHeight:"20px",fontWeight:500}}>{sn(name)}</span>
+                    </div>
+                    <span style={{fontSize:10,fontWeight:600,color:sec.cl,fontFamily:"'DM Mono',monospace",minWidth:40,textAlign:"right"}}>
+                      {isTy?("฿"+fmt(val)):val}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
